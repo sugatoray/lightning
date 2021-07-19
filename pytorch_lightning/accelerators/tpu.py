@@ -28,9 +28,9 @@ if _XLA_AVAILABLE:
 
 
 class TPUAccelerator(Accelerator):
-    """ Accelerator for TPU devices. """
+    """Accelerator for TPU devices."""
 
-    def setup(self, trainer: 'pl.Trainer', model: 'pl.LightningModule') -> None:
+    def setup(self, trainer: "pl.Trainer", model: "pl.LightningModule") -> None:
         """
         Raises:
             MisconfigurationException:
@@ -48,4 +48,4 @@ class TPUAccelerator(Accelerator):
     def run_optimizer_step(
         self, optimizer: Optimizer, optimizer_idx: int, lambda_closure: Callable, **kwargs: Any
     ) -> None:
-        xm.optimizer_step(optimizer, optimizer_args={'closure': lambda_closure, **kwargs})
+        xm.optimizer_step(optimizer, optimizer_args={"closure": lambda_closure, **kwargs})

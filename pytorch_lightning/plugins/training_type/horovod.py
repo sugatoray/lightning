@@ -27,7 +27,7 @@ if _HOROVOD_AVAILABLE:
 
 
 class HorovodPlugin(ParallelPlugin):
-    """ Plugin for Horovod distributed training integration."""
+    """Plugin for Horovod distributed training integration."""
 
     def __init__(self, parallel_devices: Optional[List[torch.device]] = None):
         super().__init__(parallel_devices=parallel_devices, cluster_environment=None)
@@ -59,7 +59,6 @@ class HorovodPlugin(ParallelPlugin):
         self.model_to_device()
 
     def pre_dispatch(self):
-
         def _unpack_lightning_optimizer(opt):
             return opt._optimizer if isinstance(opt, LightningOptimizer) else opt
 
@@ -92,7 +91,8 @@ class HorovodPlugin(ParallelPlugin):
         optimizers = [
             hvd.DistributedOptimizer(
                 optimizer, named_parameters=_filter_named_parameters(self.lightning_module, optimizer)
-            ) for optimizer in optimizers
+            )
+            for optimizer in optimizers
         ]
         self.lightning_module.trainer.accelerator.optimizers = optimizers
 
@@ -171,10 +171,7 @@ class HorovodPlugin(ParallelPlugin):
         return hvd.allreduce(tensor, op=reduce_op)
 
     def all_gather(
-        self,
-        result: Union[torch.Tensor],
-        group: Optional[Any] = group.WORLD,
-        sync_grads: bool = False
+        self, result: Union[torch.Tensor], group: Optional[Any] = group.WORLD, sync_grads: bool = False
     ) -> torch.Tensor:
         if group is not None and group != group.WORLD:
             raise ValueError("Horovod does not support allgather using a subcommunicator at this time. Unset `group`.")

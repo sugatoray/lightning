@@ -31,7 +31,7 @@ if _FAIRSCALE_AVAILABLE:
 
 
 class DDPSpawnShardedPlugin(DDPSpawnPlugin):
-    """ Optimizer sharded training provided by FairScale. """
+    """Optimizer sharded training provided by FairScale."""
 
     def configure_ddp(self):
         self._wrap_optimizers()
@@ -56,7 +56,7 @@ class DDPSpawnShardedPlugin(DDPSpawnPlugin):
             return
         self._reinit_optimizers_with_oss()
 
-    def optimizer_state(self, optimizer: 'OSS') -> Optional[dict]:
+    def optimizer_state(self, optimizer: "OSS") -> Optional[dict]:
         if isinstance(optimizer, OSS):
             optimizer.consolidate_state_dict()
         return self._optim_state_dict(optimizer)
@@ -70,7 +70,7 @@ class DDPSpawnShardedPlugin(DDPSpawnPlugin):
         return optimizer.state_dict()
 
     @property
-    def lightning_module(self) -> 'pl.LightningModule':
+    def lightning_module(self) -> "pl.LightningModule":
         if not _FAIRSCALE_AVAILABLE:  # pragma: no cover
             raise MisconfigurationException(
                 "`DDPSpawnShardedPlugin` requires `fairscale` to be installed."
