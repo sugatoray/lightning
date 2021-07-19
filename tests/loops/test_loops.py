@@ -29,7 +29,6 @@ from tests.helpers.runif import RunIf
 
 
 class NestedLoop(Loop):
-
     def __init__(self):
         super().__init__()
         self.child_loop0 = None
@@ -50,14 +49,9 @@ class NestedLoop(Loop):
         pass
 
 
-@pytest.mark.parametrize("loop_name", [
-    "fit_loop",
-    "validate_loop",
-    "test_loop",
-    "predict_loop",
-])
+@pytest.mark.parametrize("loop_name", ["fit_loop", "validate_loop", "test_loop", "predict_loop"])
 def test_connect_loops_direct(loop_name):
-    """ Test Trainer referenes in loops on assignment. """
+    """Test Trainer referenes in loops on assignment."""
     loop = NestedLoop()
     assert loop.trainer is None
 
@@ -69,7 +63,7 @@ def test_connect_loops_direct(loop_name):
 
 
 def test_connect_loops_recursive():
-    """ Test Trainer references in a nested loop assigned to a Trainer. """
+    """Test Trainer references in a nested loop assigned to a Trainer."""
     main_loop = NestedLoop()
     child0 = NestedLoop()
     child1 = NestedLoop()
@@ -84,12 +78,9 @@ def test_connect_loops_recursive():
 
 
 def test_connect_subloops(tmpdir):
-    """ Test connecting individual subloops by calling `trainer.x.y.connect()` """
+    """Test connecting individual subloops by calling `trainer.x.y.connect()`"""
     model = BoringModel()
-    trainer = Trainer(
-        default_root_dir=tmpdir,
-        fast_dev_run=True,
-    )
+    trainer = Trainer(default_root_dir=tmpdir, fast_dev_run=True)
 
     epoch_loop = trainer.fit_loop.epoch_loop
     new_batch_loop = TrainingBatchLoop()
