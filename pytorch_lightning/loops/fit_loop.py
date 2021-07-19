@@ -216,6 +216,10 @@ class FitLoop(Loop):
 
     def on_run_end(self) -> None:
         """Calls the ``on_train_end`` hook"""
+        # necessary until restoring mid-epoch is fully supported
+        if not self.done:
+            self.current_epoch += 1
+
         self.trainer.call_hook("on_train_end")
 
         # todo: TPU 8 cores hangs in flush with TensorBoard. Might do for all loggers.

@@ -132,33 +132,40 @@ def test_model_properties_resume_from_checkpoint(tmpdir):
 
 
 def test_correct_step_and_epoch(tmpdir):
-
-    class TestModel(BoringModel):
-
-        def on_pretrain_routine_end(self) -> None:
-            assert self.trainer.global_step == 5  # TODO(@carmocca): should be 4
-
     model = BoringModel()
-    trainer = Trainer(default_root_dir=tmpdir, max_epochs=2, limit_train_batches=2)
+    first_max_epochs = 2
+    train_batches = 2
+    trainer = Trainer(default_root_dir=tmpdir, max_epochs=first_max_epochs, limit_train_batches=train_batches)
     assert trainer.current_epoch == 0
     assert trainer.global_step == 0
 
     trainer.fit(model)
-    assert trainer.current_epoch == 2
-    assert trainer.global_step == 4
+    assert trainer.current_epoch == first_max_epochs
+    assert trainer.global_step == first_max_epochs * train_batches
 
     ckpt = str(tmpdir / "model.ckpt")
     trainer.save_checkpoint(ckpt)
-    assert torch.load(ckpt)["global_step"] == 5  # TODO(@carmocca): should be 4
+    # TODO(@carmocca): should not need `+1`
+    assert torch.load(ckpt)["global_step"] == first_max_epochs * train_batches + 1
 
-    trainer = Trainer(default_root_dir=tmpdir, resume_from_checkpoint=ckpt, max_epochs=4, limit_train_batches=2)
+    max_epochs = 4
+    trainer = Trainer(
+        default_root_dir=tmpdir, resume_from_checkpoint=ckpt, max_epochs=max_epochs, limit_train_batches=train_batches
+    )
     # the ckpt state is not loaded at this point
     assert trainer.current_epoch == 0
     assert trainer.global_step == 0
 
+    class TestModel(BoringModel):
+
+        def on_pretrain_routine_end(self) -> None:
+            # TODO(@carmocca): should not need `+1`
+            assert self.trainer.global_step == first_max_epochs * train_batches + 1
+
     trainer.fit(TestModel())
-    assert trainer.current_epoch == 4
-    assert trainer.global_step == 7  # TODO(@carmocca): should be 8
+    assert trainer.current_epoch == max_epochs
+    # TODO(@carmocca): should not need `+1`
+    assert trainer.global_step == max_epochs * train_batches + 1
 
 
 def test_fit_twice(tmpdir):
