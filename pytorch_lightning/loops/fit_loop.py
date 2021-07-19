@@ -216,13 +216,6 @@ class FitLoop(Loop):
 
     def on_run_end(self) -> None:
         """Calls the ``on_train_end`` hook"""
-        # NOTE: the iteration_count/current_epoch is already incremented
-        # Lightning today does not increment the current epoch at the last epoch run in Trainer.fit
-        # To simulate that current behavior, we decrement here.
-        # TODO: must be fixed by https://github.com/PyTorchLightning/pytorch-lightning/issues/5007
-        self.current_epoch -= 1
-
-        # hook
         self.trainer.call_hook("on_train_end")
 
         # todo: TPU 8 cores hangs in flush with TensorBoard. Might do for all loggers.
