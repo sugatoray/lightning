@@ -17,7 +17,7 @@ Quantization
 
 """
 import functools
-from typing import Any, Callable, Optional, Sequence, Union, Dict
+from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 import torch
 from torch.quantization import QConfig
@@ -184,8 +184,12 @@ class QuantizationAwareTraining(Callback):
                 )
         return True
 
-    def on_save_checkpoint(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule',
-                           checkpoint: Dict[str, Any],) -> Dict[str, Any]:
+    def on_save_checkpoint(
+        self,
+        trainer: 'pl.Trainer',
+        pl_module: 'pl.LightningModule',
+        checkpoint: Dict[str, Any],
+    ) -> Dict[str, Any]:
         # todo
         return vars(self)
 
