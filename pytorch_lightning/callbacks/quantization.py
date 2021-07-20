@@ -82,6 +82,65 @@ def _recursive_hasattr(obj: Any, attribs: str, state: bool = True) -> bool:
 
 
 class QuantizationAwareTraining(Callback):
+    """
+    Quantization allows speeding up inference and decreasing memory requirements
+    by performing computations and storing tensors at lower bitwidths
+    (such as INT8 or FLOAT16) than floating point precision.
+    We use native PyTorch API so for more information
+    see `Quantization <https://pytorch.org/docs/stable/quantization.html#quantization-aware-training>`_.
+
+    .. warning:: ``QuantizationAwareTraining`` is in beta and subject to change.
+
+    The model set for quantization can appear in one of this stages:
+
+                          ( on_fit_start )                    ( on_fit_end )
+        vanilla model            -->           QuantAwareTrain     -->      quantized model
+             ^                                 ^      |
+             |                                /       |
+             |       ( resume_from_checkpoint )       v
+        entry point               ^             QAT checkpoints
+                                  \--------------------/  
+
+    The model enters the process as "vanilla model" and it is prepared for QAT training in ``on_fit_start`` hook.
+    Note that any saved checkpoint includes already collected stat fro performing Quantization conversion,
+     but not any already quantized and/ fused modules/layers.
+    The quantization is performed on the ``on_fit_end`` and so it need sto he saved extra after finished training.
+    If a user wants to continue any past training we encourage to create a Trainer with ``resume_from_checkpoint``.
+
+    Args:
+
+        qconfig: quantization configuration:
+
+            - 'fbgemm' for server inference.
+            - 'qnnpack' for mobile inference.
+            -  a custom `torch.quantization.QConfig <https://pytorch.org/docs/stable/torch.quantization.html#torch.quantization.QConfig>`_.
+
+        observer_type: allows switching between ``MovingAverageMinMaxObserver`` as "average" (default)
+            and ``HistogramObserver`` as "histogram" which is more computationally expensive.
+
+        collect_quantization: count or custom function to collect quantization statistics:
+
+            - ``None`` (deafult). The quantization observer is called in each module forward
+                (useful for collecting extended statistic when useing image/data augmentation).
+            - ``int``. Use to set a fixed number of calls, starting from the beginning.
+            - ``Callable``. Custom function with single trainer argument.
+                See this example to trigger only the last epoch:
+
+                .. code-block:: python
+
+                    def custom_trigger_last(trainer):
+                        return trainer.current_epoch == (trainer.max_epochs - 1)
+
+                    QuantizationAwareTraining(collect_quantization=custom_trigger_last)
+
+        modules_to_fuse: allows you fuse a few layers together as shown in
+            `diagram <https://pytorch.org/docs/stable/quantization.html#quantization-aware-training>`_
+            to find which layer types can be fused, check https://github.com/pytorch/pytorch/pull/43286.
+
+        input_compatible: preserve quant/dequant layers. This allows to feat any input as to the original model,
+            but break compatibility to torchscript.
+
+    """  # noqa: E501
     OBSERVER_TYPES = ('histogram', 'average')
 
     def __init__(
@@ -92,50 +151,6 @@ class QuantizationAwareTraining(Callback):
         modules_to_fuse: Optional[Sequence] = None,
         input_compatible: bool = True,
     ) -> None:
-        """
-        Quantization allows speeding up inference and decreasing memory requirements
-        by performing computations and storing tensors at lower bitwidths
-        (such as INT8 or FLOAT16) than floating point precision.
-        We use native PyTorch API so for more information
-        see `Quantization <https://pytorch.org/docs/stable/quantization.html#quantization-aware-training>`_.
-
-        .. warning:: ``QuantizationAwareTraining`` is in beta and subject to change.
-
-
-        Args:
-
-            qconfig: quantization configuration:
-
-                - 'fbgemm' for server inference.
-                - 'qnnpack' for mobile inference.
-                -  a custom `torch.quantization.QConfig <https://pytorch.org/docs/stable/torch.quantization.html#torch.quantization.QConfig>`_.
-
-            observer_type: allows switching between ``MovingAverageMinMaxObserver`` as "average" (default)
-                and ``HistogramObserver`` as "histogram" which is more computationally expensive.
-
-            collect_quantization: count or custom function to collect quantization statistics:
-
-                - ``None`` (deafult). The quantization observer is called in each module forward
-                    (useful for collecting extended statistic when useing image/data augmentation).
-                - ``int``. Use to set a fixed number of calls, starting from the beginning.
-                - ``Callable``. Custom function with single trainer argument.
-                    See this example to trigger only the last epoch:
-
-                    .. code-block:: python
-
-                        def custom_trigger_last(trainer):
-                            return trainer.current_epoch == (trainer.max_epochs - 1)
-
-                        QuantizationAwareTraining(collect_quantization=custom_trigger_last)
-
-            modules_to_fuse: allows you fuse a few layers together as shown in
-                `diagram <https://pytorch.org/docs/stable/quantization.html#quantization-aware-training>`_
-                to find which layer types can be fused, check https://github.com/pytorch/pytorch/pull/43286.
-
-            input_compatible: preserve quant/dequant layers. This allows to feat any input as to the original model,
-                but break compatibility to torchscript.
-
-        """  # noqa: E501
         _valid_qconf_str = isinstance(qconfig, str) and qconfig in torch.backends.quantized.supported_engines
         if not isinstance(qconfig, QConfig) and not _valid_qconf_str:
             raise MisconfigurationException(

@@ -266,7 +266,7 @@ class Callback(abc.ABC):
 
     def on_save_checkpoint(
         self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule', checkpoint: Dict[str, Any]
-    ) -> dict:
+    ) -> Dict[str, Any]:
         """
         Called when saving a model checkpoint, use to persist state.
 
