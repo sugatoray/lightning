@@ -20,6 +20,7 @@ import functools
 from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 import torch
+from torch.nn import Module
 from torch.quantization import QConfig
 
 import pytorch_lightning as pl
@@ -178,7 +179,7 @@ class QuantizationAwareTraining(Callback):
         self._forward_calls = 0
         self.__module_prepared = False
 
-    def _check_feasible_fuse(self, model):
+    def _check_feasible_fuse(self, model: Module):
         if not self._modules_to_fuse:
             return False
         for group in self._modules_to_fuse:
@@ -205,7 +206,7 @@ class QuantizationAwareTraining(Callback):
             setattr(self, f"_{k}", v)
         self.prepare_model(pl_module)
 
-    def prepare_model(self, pl_module):
+    def prepare_model(self, pl_module: 'pl.LightningModule'):
         # QuantStub converts tensors from floating point to quantized
         pl_module.quant = torch.quantization.QuantStub()
         # DeQuantStub converts tensors from quantized to floating point
@@ -235,12 +236,12 @@ class QuantizationAwareTraining(Callback):
         torch.quantization.prepare_qat(pl_module, inplace=True)
         self.__module_prepared = True
 
-    def on_fit_start(self, trainer, pl_module):
+    def on_fit_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule'):
         if self.__module_prepared:
             return
         self.prepare_model(pl_module)
 
-    def on_fit_end(self, trainer, pl_module):
+    def on_fit_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule'):
         pl_module.eval()
         # Convert the observed model to a quantized model. This does several things:
         # quantizes the weights, computes and stores the scale and bias value to be
