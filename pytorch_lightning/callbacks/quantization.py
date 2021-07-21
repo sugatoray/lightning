@@ -140,7 +140,7 @@ class QuantizationAwareTraining(Callback):
         input_compatible: preserve quant/dequant layers. This allows to feat any input as to the original model,
             but break compatibility to torchscript.
 
-    """
+    """  # noa: E501
     OBSERVER_TYPES = ('histogram', 'average')
 
     def __init__(
